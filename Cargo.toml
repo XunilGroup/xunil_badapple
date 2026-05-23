@@ -9,7 +9,7 @@ test = false
 bench = false
 
 [dependencies]
-xunil = { package = "libxunil", path = "../libxunil" }
+xunil = { package = "libxunil", path = "../../libxunil" }
 
 [profile.release]
 panic = "abort"
