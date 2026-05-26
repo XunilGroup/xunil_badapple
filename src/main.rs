@@ -5,7 +5,7 @@ extern crate alloc;
 
 use alloc::{string::String, vec::Vec};
 use xunil::{
-    graphics::{base::rgb, font_render::render_text, framebuffer::WindowFrameBuffer},
+    graphics::{font_render::render_text, framebuffer::WindowFrameBuffer, rgb},
     io::{
         time::sleep_ms,
         window::{request_window, set_dirty},
