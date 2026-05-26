@@ -3,29 +3,73 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
-use xunil::{print, time::sleep_ms};
+use alloc::{string::String, vec::Vec};
+use xunil::{
+    graphics::{base::rgb, font_render::render_text, framebuffer::WindowFrameBuffer},
+    io::{
+        time::sleep_ms,
+        window::{request_window, set_dirty},
+    },
+};
 
 static BAD_APPLE_ASCII: &'static str = include_str!("../assets/bad_apple_ascii.txt");
 
-fn split_ascii(s: &str, n: usize) -> Vec<&str> {
-    (0..s.len())
-        .step_by(n)
-        .map(|i| &s[i..usize::min(i + n, s.len())])
-        .collect()
+fn split_ascii(s: &str, width: usize) -> String {
+    let mut result = String::new();
+    let mut col = 0;
+
+    for ch in s.chars() {
+        if col >= width {
+            result.push('\n');
+            col = 0;
+        }
+        result.push(ch);
+        col += 1;
+    }
+
+    result
 }
 
 #[unsafe(no_mangle)]
 extern "C" fn main(_argc: i32, _argv: *const *const u8) -> i32 {
-    for frame in BAD_APPLE_ASCII.split("NEWFRAME") {
-        print("\x1b[2J");
+    let window = unsafe { request_window() };
 
-        for text in split_ascii(frame, 100) {
-            print(text);
-            print("\n");
+    let mut back_buffer: Vec<u32> = Vec::new();
+    back_buffer.resize(window.width * window.height, 0);
+
+    for frame in BAD_APPLE_ASCII.split("NEWFRAME") {
+        for pixel in back_buffer.iter_mut() {
+            *pixel = rgb(0, 0, 0);
         }
 
-        unsafe { sleep_ms(1000 / 30) };
+        let mut back_fb = WindowFrameBuffer {
+            ptr: back_buffer.as_mut_ptr(),
+            width: window.width,
+            height: window.height,
+        };
+
+        let formatted_frame = split_ascii(frame, 140);
+        render_text(
+            &mut back_fb,
+            0,
+            0,
+            &formatted_frame,
+            1,
+            rgb(255, 255, 255),
+            0,
+        );
+
+        let window_fb = WindowFrameBuffer::from_window(&window);
+        unsafe {
+            core::ptr::copy_nonoverlapping(
+                back_buffer.as_ptr(),
+                window_fb.ptr,
+                window.width * window.height,
+            );
+        }
+
+        set_dirty();
+        unsafe { sleep_ms(1000 / 25) };
     }
 
     0
