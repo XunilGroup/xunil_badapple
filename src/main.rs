@@ -5,7 +5,7 @@ extern crate alloc;
 
 use alloc::{string::String, vec::Vec};
 use xunil::{
-    graphics::{font_render::render_text, framebuffer::WindowFrameBuffer, rgb},
+    graphics::{framebuffer::WindowFrameBuffer, primitives::rectangle_filled, rgb},
     io::{
         time::sleep_ms,
         window::{request_window, set_dirty},
@@ -32,7 +32,13 @@ fn split_ascii(s: &str, width: usize) -> String {
 
 #[unsafe(no_mangle)]
 extern "C" fn main(_argc: i32, _argv: *const *const u8) -> i32 {
-    let window = unsafe { request_window() };
+    let rows_per_frame = BAD_APPLE_ASCII
+        .split("NEWFRAME")
+        .next()
+        .map(|f| (f.len() + 99) / 100)
+        .unwrap_or(75);
+
+    let window = unsafe { request_window(4 * 100, 4 * rows_per_frame) };
 
     let mut back_buffer: Vec<u32> = Vec::new();
     back_buffer.resize(window.width * window.height, 0);
@@ -48,16 +54,25 @@ extern "C" fn main(_argc: i32, _argv: *const *const u8) -> i32 {
             height: window.height,
         };
 
-        let formatted_frame = split_ascii(frame, 140);
-        render_text(
-            &mut back_fb,
-            0,
-            0,
-            &formatted_frame,
-            1,
-            rgb(255, 255, 255),
-            0,
-        );
+        let formatted_frame = split_ascii(frame, 100);
+        let mut y = 0;
+        let mut x = 0;
+        for character in formatted_frame.as_str().chars() {
+            if character == '\n' {
+                x = 0;
+                y += 4;
+                continue;
+            }
+
+            let grayness = character.to_digit(10).unwrap_or(0) as f32 * 255.0 / 9.0;
+
+            if grayness > 0.0 {
+                let color = rgb(grayness as u8, grayness as u8, grayness as u8);
+                rectangle_filled(&mut back_fb, x, y, 2, 2, color);
+            }
+
+            x += 4;
+        }
 
         let window_fb = WindowFrameBuffer::from_window(&window);
         unsafe {
@@ -69,7 +84,7 @@ extern "C" fn main(_argc: i32, _argv: *const *const u8) -> i32 {
         }
 
         set_dirty();
-        unsafe { sleep_ms(1000 / 25) };
+        unsafe { sleep_ms(1000 / 40) };
     }
 
     0

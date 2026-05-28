@@ -3,13 +3,13 @@ from PIL import Image
 
 video_length = 218
 
-ASCII_CHARS = '$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,"^`\'. '
+ASCII_CHARS = '0123456789'
 
 
 def handle_frame():
     image = Image.open("output.jpg").convert("L")
     pixels_in_image = list(image.getdata())
-    pixels_to_chars = [ASCII_CHARS[int(pixel_value / 3.69)] for pixel_value in pixels_in_image]
+    pixels_to_chars = [ASCII_CHARS[pixel_value * (len(ASCII_CHARS) - 1) // 255] for pixel_value in pixels_in_image]
 
     return "".join(pixels_to_chars)
 
