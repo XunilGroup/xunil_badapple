@@ -3,12 +3,15 @@
 
 extern crate alloc;
 
-use alloc::{string::String, vec::Vec};
+use alloc::{
+    string::{String, ToString},
+    vec::Vec,
+};
 use xunil::{
     graphics::{framebuffer::WindowFrameBuffer, primitives::rectangle_filled, rgb},
     io::{
         time::sleep_ms,
-        window::{request_window, set_dirty},
+        window::{request_window_rust, set_dirty},
     },
 };
 
@@ -38,7 +41,8 @@ extern "C" fn main(_argc: i32, _argv: *const *const u8) -> i32 {
         .map(|f| (f.len() + 99) / 100)
         .unwrap_or(75);
 
-    let window = unsafe { request_window(4 * 100, 4 * rows_per_frame) };
+    let window =
+        unsafe { request_window_rust(4 * 100, 4 * rows_per_frame, "BadApple".to_string()) };
 
     let mut back_buffer: Vec<u32> = Vec::new();
     back_buffer.resize(window.width * window.height, 0);
